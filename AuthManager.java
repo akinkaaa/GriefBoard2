@@ -2,7 +2,15 @@ package ru.griefboard;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Location;
+import org.bukkit.Sound;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -73,6 +81,11 @@ public class AuthManager implements Listener, CommandExecutor {
         DEF.put("name-case", "&cЭтот ник зарегистрирован с другими заглавными буквами. Зайди с точным ником.");
         DEF.put("password-changed", "&8[&6ГРИФ&8] &aПароль успешно изменён.");
         DEF.put("wrong-old-password", "&8[&6ГРИФ&8] &cСтарый пароль неверный.");
+        DEF.put("success-title", "&a&lДобро пожаловать");
+        DEF.put("success-subtitle", "&7%player%");
+        DEF.put("bossbar", "&6Осталось на вход: &f%time% &6сек.");
+        DEF.put("actionbar-login", "&e/login &f<пароль>");
+        DEF.put("actionbar-register", "&e/register &f<пароль> <повтор>");
         DEF.put("session", "&8[&6ГРИФ&8] &aТы вошёл автоматически. &7С возвращением, &f%player%&7!");
     }
 
@@ -82,6 +95,7 @@ public class AuthManager implements Listener, CommandExecutor {
     private final Set<UUID> authed = new HashSet<>();
     private final Map<UUID, Integer> waited = new HashMap<>();
     private final Map<UUID, Integer> attempts = new HashMap<>();
+    private final Map<UUID, BossBar> bars = new HashMap<>();
     private int taskId = -1;
 
     AuthManager(GriefBoard plugin) {
@@ -112,6 +126,7 @@ public class AuthManager implements Listener, CommandExecutor {
                     p.kickPlayer(c(msg("timeout", p)));
                     continue;
                 }
+                updateHud(p, w, Math.max(1, timeout));
                 if (w % remind == 0) remind(p);
             }
         }, 20L, 20L);
@@ -119,7 +134,10 @@ public class AuthManager implements Listener, CommandExecutor {
 
     void disable() {
         if (taskId != -1) Bukkit.getScheduler().cancelTask(taskId);
-        for (Player p : Bukkit.getOnlinePlayers()) touch(p);
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            touch(p);
+            unlock(p);
+        }
         save();
     }
 
@@ -143,13 +161,63 @@ public class AuthManager implements Listener, CommandExecutor {
                     && System.currentTimeMillis() - acc.getLong(base + ".last-seen", 0) < session) {
                 authed.add(p.getUniqueId());
                 send(p, "session");
+                welcome(p);
                 return;
             }
         }
-        authed.remove(p.getUniqueId());
-        waited.put(p.getUniqueId(), 0);
-        attempts.remove(p.getUniqueId());
+        lock(p);
+    }
+
+    /** Закрывает игрока: полоска времени, затемнение, подсказки. */
+    private void lock(Player p) {
+        UUID id = p.getUniqueId();
+        authed.remove(id);
+        waited.put(id, 0);
+        attempts.remove(id);
+        if (fx("bossbar") && !bars.containsKey(id)) {
+            String title = msg("bossbar", p).replace("%time%", String.valueOf(cfgInt("timeout-seconds", 60)));
+            BossBar bar = Bukkit.createBossBar(c(title), BarColor.YELLOW, BarStyle.SEGMENTED_10);
+            bar.addPlayer(p);
+            bars.put(id, bar);
+        }
+        if (fx("blindness")) {
+            p.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, Integer.MAX_VALUE, 0, false, false, false));
+        }
+        sound(p, Sound.BLOCK_NOTE_BLOCK_PLING, 1.5f);
         remind(p);
+    }
+
+    /** Открывает игрока: убирает полоску и затемнение. */
+    private void unlock(Player p) {
+        BossBar bar = bars.remove(p.getUniqueId());
+        if (bar != null) bar.removeAll();
+        if (fx("blindness")) p.removePotionEffect(PotionEffectType.BLINDNESS);
+    }
+
+    private void updateHud(Player p, int waitedSec, int timeout) {
+        BossBar bar = bars.get(p.getUniqueId());
+        if (bar != null) {
+            String title = msg("bossbar", p).replace("%time%", String.valueOf(Math.max(0, timeout - waitedSec)));
+            bar.setTitle(c(title));
+            bar.setProgress(Math.max(0.0, Math.min(1.0, 1.0 - (double) waitedSec / timeout)));
+        }
+        if (fx("actionbar")) {
+            String key = acc.contains(base(p)) ? "actionbar-login" : "actionbar-register";
+            p.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(c(msg(key, p))));
+        }
+    }
+
+    private void welcome(Player p) {
+        p.sendTitle(c(msg("success-title", p)), c(msg("success-subtitle", p)), 5, 50, 15);
+        sound(p, Sound.ENTITY_PLAYER_LEVELUP, 1.2f);
+    }
+
+    private void sound(Player p, Sound sound, float pitch) {
+        if (fx("sounds")) p.playSound(p.getLocation(), sound, 1f, pitch);
+    }
+
+    private boolean fx(String name) {
+        return plugin.getConfig().getBoolean("auth.effects." + name, true);
     }
 
     @EventHandler
@@ -159,6 +227,7 @@ public class AuthManager implements Listener, CommandExecutor {
             touch(p);
             save();
         }
+        unlock(p);
         authed.remove(p.getUniqueId());
         waited.remove(p.getUniqueId());
         attempts.remove(p.getUniqueId());
@@ -220,6 +289,7 @@ public class AuthManager implements Listener, CommandExecutor {
                 save();
                 success(p);
                 send(p, "registered");
+                welcome(p);
             });
         });
     }
@@ -243,12 +313,14 @@ public class AuthManager implements Listener, CommandExecutor {
                     save();
                     success(p);
                     send(p, "login-success");
+                    welcome(p);
                 } else {
                     int a = attempts.merge(id, 1, Integer::sum);
                     if (a >= cfgInt("max-attempts", 5)) {
                         p.kickPlayer(c(msg("too-many-attempts", p)));
                     } else {
                         send(p, "wrong-password");
+                        sound(p, Sound.ENTITY_VILLAGER_NO, 1f);
                     }
                 }
             });
@@ -291,14 +363,13 @@ public class AuthManager implements Listener, CommandExecutor {
         save();
         Player p = Bukkit.getPlayerExact(name);
         if (p != null) {
-            authed.remove(p.getUniqueId());
-            waited.put(p.getUniqueId(), 0);
-            remind(p);
+            lock(p);
         }
         return true;
     }
 
     private void success(Player p) {
+        unlock(p);
         authed.add(p.getUniqueId());
         waited.remove(p.getUniqueId());
         attempts.remove(p.getUniqueId());

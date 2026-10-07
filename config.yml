@@ -109,6 +109,12 @@ auth:
   max-attempts: 5           # неверных паролей до кика
   min-password-length: 6
   session-minutes: 10       # 0 = всегда вводить пароль; иначе вход без пароля с того же IP
+  # Оформление: полоска времени, затемнение экрана, подсказка над хотбаром, звуки
+  effects:
+    bossbar: true
+    blindness: true
+    actionbar: true
+    sounds: true
   # Сообщения. %player% - ник, %nl% - перенос строки, цвета через &
   messages:
     register-request: "%nl%&8&m                                  %nl%&6&l  ГРИФ &8| &fРегистрация%nl% %nl%&7  Привет, &f%player%&7!%nl%&7  Придумай пароль и введи:%nl%&e  /register &f<пароль> <повтор пароля>%nl%&8&m                                  %nl%"
@@ -137,3 +143,8 @@ auth:
     password-changed: "&8[&6ГРИФ&8] &aПароль успешно изменён."
     wrong-old-password: "&8[&6ГРИФ&8] &cСтарый пароль неверный."
     session: "&8[&6ГРИФ&8] &aТы вошёл автоматически. &7С возвращением, &f%player%&7!"
+    success-title: "&a&lДобро пожаловать"
+    success-subtitle: "&7%player%"
+    bossbar: "&6Осталось на вход: &f%time% &6сек."
+    actionbar-login: "&e/login &f<пароль>"
+    actionbar-register: "&e/register &f<пароль> <повтор>"
