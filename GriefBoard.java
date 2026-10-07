@@ -45,6 +45,7 @@ public class GriefBoard extends JavaPlugin implements Listener {
     private final Map<UUID, Scoreboard> boards = new HashMap<>();
     private int taskId = -1;
     private AuthManager auth;
+    private ClanManager clans;
     private final Map<UUID, PermissionAttachment> attachments = new HashMap<>();
     private final Set<UUID> busy = new HashSet<>();
     private final Map<UUID, Long> rtpCooldown = new HashMap<>();
@@ -63,6 +64,10 @@ public class GriefBoard extends JavaPlugin implements Listener {
             auth = new AuthManager(this);
             auth.enable();
         }
+        if (getConfig().getBoolean("clans.enabled", true)) {
+            clans = new ClanManager(this);
+            clans.enable();
+        }
         for (Player p : Bukkit.getOnlinePlayers()) {
             applyRank(p);
             createBoard(p);
@@ -74,6 +79,7 @@ public class GriefBoard extends JavaPlugin implements Listener {
     public void onDisable() {
         if (taskId != -1) Bukkit.getScheduler().cancelTask(taskId);
         if (auth != null) auth.disable();
+        if (clans != null) clans.disable();
         saveData();
         for (Player p : Bukkit.getOnlinePlayers()) {
             p.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
@@ -156,14 +162,27 @@ public class GriefBoard extends JavaPlugin implements Listener {
         if (!fmt.isEmpty()) p.setPlayerListName(color(replace(fmt, p)));
     }
 
+    /** Тег клана для чата и таба, например "[Название] ". Пусто, если игрок не в клане. */
+    private String clanTag(Player p) {
+        return clans == null ? "" : clans.getClanTag(p.getUniqueId());
+    }
+
+    /** Личный скорборд игрока (нужен кланам для подсветки тимы). */
+    org.bukkit.scoreboard.Scoreboard boardOf(Player p) {
+        return boards.get(p.getUniqueId());
+    }
+
     private String replace(String s, Player p) {
         String base = "players." + p.getUniqueId() + ".";
-        String clan = data.getString(base + "clan", "");
+        String clan = clans == null ? null : clans.getClanName(p.getUniqueId());
+        if (clan == null) clan = data.getString(base + "clan", "");
         if (clan.isEmpty()) clan = getConfig().getString("no-clan", "Без клана");
 
         return s.replace("{player}", p.getName())
                 .replace("{rank}", getRank(p))
                 .replace("{clan}", clan)
+                .replace("{clantag}", clanTag(p))
+                .replace("{clanlevel}", String.valueOf(clans == null ? 0 : clans.getClanLevel(p.getUniqueId())))
                 .replace("{kills}", String.valueOf(p.getStatistic(Statistic.PLAYER_KILLS)))
                 .replace("{deaths}", String.valueOf(p.getStatistic(Statistic.DEATHS)))
                 .replace("{elo}", fmt(data.getInt(base + "elo", getConfig().getInt("start-elo", 1000))))
@@ -359,7 +378,7 @@ public class GriefBoard extends JavaPlugin implements Listener {
         if (!getConfig().getBoolean("chat.enabled", true)) return;
         Player p = e.getPlayer();
         String f = getConfig().getString("chat.format", "{rank} &f{player}&8: &7{message}");
-        f = f.replace("{rank}", getRank(p)).replace("{player}", p.getName());
+        f = f.replace("{rank}", getRank(p)).replace("{clantag}", clanTag(p)).replace("{player}", p.getName());
         f = color(f.replace("%", "%%"));
         f = f.replace("{message}", "%2$s");
         e.setFormat(f);
