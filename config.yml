@@ -79,13 +79,13 @@ tab:
     - "&cIP: &fserver.com"
     - "&c&m                                        "
   # Как выглядит ник в списке. Пустая строка = не менять
-  name-format: "{rank} &f{player}"
+  name-format: "{rank} {clantag}&f{player}"
 
 # ---------- ЧАТ ----------
 # Плейсхолдеры: {rank} {player} {message}
 chat:
   enabled: true
-  format: "{rank} &f{player}&8: &7{message}"
+  format: "{rank} {clantag}&f{player}&8: &7{message}"
 
 # ---------- RTP и яма ----------
 rtp:
@@ -148,3 +148,56 @@ auth:
     bossbar: "&6Осталось на вход: &f%time% &6сек."
     actionbar-login: "&e/login &f<пароль>"
     actionbar-register: "&e/register &f<пароль> <повтор>"
+
+# ---------- КЛАНЫ ----------
+# Команды: /clan (меню), /clan menu, /cc - чат клана
+# В чате и табе тег клана в его цвете показывает {clantag}, в скорборде название - {clan},
+# уровень клана - {clanlevel}
+clans:
+  enabled: true
+  min-name-length: 3
+  max-name-length: 12
+  invite-seconds: 60          # сколько действует приглашение
+  friendly-fire: false        # true = участники клана могут бить друг друга
+  chat-format: "&8[&6Клан&8] &f{player}&8: &e{message}"
+  points-per-kill: 10         # очки клана за убийство игрока из другого клана
+  kill-cooldown-seconds: 600  # за одного и того же игрока очки не чаще, чем раз в это время
+  home-warmup-seconds: 5      # сколько надо стоять перед телепортом в дом клана
+  home-cooldown-seconds: 60
+  # Уровни. Уровень растёт сам, когда у клана набирается нужное число очков.
+  #   points       - очков нужно для уровня
+  #   max-members  - максимум игроков в клане
+  #   home         - открыт ли дом клана (/clan sethome, /clan home)
+  #   glow         - открыто ли свечение тимы
+  #   effects      - бонусные эффекты всем участникам, формат ЭФФЕКТ:уровень (0 = I)
+  levels:
+    1:
+      points: 0
+      max-members: 5
+      home: false
+      glow: false
+      effects: []
+    2:
+      points: 100
+      max-members: 8
+      home: true
+      glow: false
+      effects: []
+    3:
+      points: 300
+      max-members: 12
+      home: true
+      glow: true
+      effects: []
+    4:
+      points: 700
+      max-members: 16
+      home: true
+      glow: true
+      effects: ["SPEED:0"]
+    5:
+      points: 1500
+      max-members: 20
+      home: true
+      glow: true
+      effects: ["SPEED:0", "FAST_DIGGING:0"]

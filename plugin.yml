@@ -18,6 +18,12 @@ commands:
   changepassword:
     description: Смена пароля
     aliases: [changepass]
+  clan:
+    description: Кланы
+    aliases: [clans]
+  cc:
+    description: Чат клана
+    aliases: [clanchat]
   rank:
     description: Выдача рангов
     permission: griefboard.admin
