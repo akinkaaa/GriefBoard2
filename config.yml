@@ -221,3 +221,13 @@ nametag:
   enabled: true
   prefix: "{rank} "
   suffix: "{clansuffix}"
+
+# ---------- СПАВН (/spawn, /lobby, /hub) ----------
+# Телепорт на спавн через несколько секунд. Нужно стоять на месте, сверху идёт таймер (боссбар).
+spawn:
+  enabled: true
+  # world: "lobby"         # мир спавна; если не указан, берётся rtp.lobby-world
+  warmup-seconds: 5        # сколько секунд ждать
+  cooldown-seconds: 0      # пауза между использованиями (0 = без паузы)
+  cancel-on-damage: true   # получил урон - телепорт отменяется
+  admin-instant: true      # у админов (griefboard.admin, OP) телепорт мгновенный

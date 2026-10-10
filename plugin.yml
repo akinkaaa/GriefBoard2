@@ -39,6 +39,9 @@ commands:
     description: Отменить свои запросы телепорта
   tptoggle:
     description: Включить или выключить запросы телепорта
+  spawn:
+    description: Телепорт на спавн
+    aliases: [lobby, hub]
   rank:
     description: Выдача рангов
     permission: griefboard.admin

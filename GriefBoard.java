@@ -47,6 +47,7 @@ public class GriefBoard extends JavaPlugin implements Listener {
     private AuthManager auth;
     private ClanManager clans;
     private TpaManager tpa;
+    private SpawnManager spawn;
     private final Map<UUID, PermissionAttachment> attachments = new HashMap<>();
     private final Set<UUID> busy = new HashSet<>();
     private final Map<UUID, Long> rtpCooldown = new HashMap<>();
@@ -73,6 +74,10 @@ public class GriefBoard extends JavaPlugin implements Listener {
             tpa = new TpaManager(this);
             tpa.enable();
         }
+        if (getConfig().getBoolean("spawn.enabled", true)) {
+            spawn = new SpawnManager(this);
+            spawn.enable();
+        }
         for (Player p : Bukkit.getOnlinePlayers()) {
             applyRank(p);
             createBoard(p);
@@ -88,6 +93,7 @@ public class GriefBoard extends JavaPlugin implements Listener {
         if (auth != null) auth.disable();
         if (clans != null) clans.disable();
         if (tpa != null) tpa.disable();
+        if (spawn != null) spawn.disable();
         saveData();
         for (Player p : Bukkit.getOnlinePlayers()) {
             p.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
