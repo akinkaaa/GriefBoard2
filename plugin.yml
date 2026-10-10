@@ -24,6 +24,21 @@ commands:
   cc:
     description: Чат клана
     aliases: [clanchat]
+  tpa:
+    description: Запрос на телепорт к игроку
+  tpahere:
+    description: Попросить игрока телепортироваться к тебе
+    aliases: [tpah]
+  tpaccept:
+    description: Принять запрос телепорта
+    aliases: [tpyes]
+  tpdeny:
+    description: Отклонить запрос телепорта
+    aliases: [tpno]
+  tpcancel:
+    description: Отменить свои запросы телепорта
+  tptoggle:
+    description: Включить или выключить запросы телепорта
   rank:
     description: Выдача рангов
     permission: griefboard.admin

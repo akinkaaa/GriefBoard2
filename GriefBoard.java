@@ -38,7 +38,7 @@ import java.util.regex.Pattern;
 public class GriefBoard extends JavaPlugin implements Listener {
 
     private static final Pattern HEX = Pattern.compile("&#([A-Fa-f0-9]{6})");
-    private static final List<String> FIELDS = Arrays.asList("balance", "pillikov", "romashki", "elo", "clan");
+    private static final List<String> FIELDS = Arrays.asList("balance", "cytrix", "pillikov", "romashki", "elo", "clan");
 
     private File dataFile;
     private FileConfiguration data;
@@ -46,6 +46,7 @@ public class GriefBoard extends JavaPlugin implements Listener {
     private int taskId = -1;
     private AuthManager auth;
     private ClanManager clans;
+    private TpaManager tpa;
     private final Map<UUID, PermissionAttachment> attachments = new HashMap<>();
     private final Set<UUID> busy = new HashSet<>();
     private final Map<UUID, Long> rtpCooldown = new HashMap<>();
@@ -68,6 +69,10 @@ public class GriefBoard extends JavaPlugin implements Listener {
             clans = new ClanManager(this);
             clans.enable();
         }
+        if (getConfig().getBoolean("tpa.enabled", true)) {
+            tpa = new TpaManager(this);
+            tpa.enable();
+        }
         for (Player p : Bukkit.getOnlinePlayers()) {
             applyRank(p);
             createBoard(p);
@@ -80,6 +85,7 @@ public class GriefBoard extends JavaPlugin implements Listener {
         if (taskId != -1) Bukkit.getScheduler().cancelTask(taskId);
         if (auth != null) auth.disable();
         if (clans != null) clans.disable();
+        if (tpa != null) tpa.disable();
         saveData();
         for (Player p : Bukkit.getOnlinePlayers()) {
             p.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
@@ -189,6 +195,8 @@ public class GriefBoard extends JavaPlugin implements Listener {
                 .replace("{balance}", fmt(data.getInt(base + "balance", 0)))
                 .replace("{pillikov}", fmt(data.getInt(base + "pillikov", 0)))
                 .replace("{romashki}", fmt(data.getInt(base + "romashki", 0)))
+                .replace("{cytrix}", fmt(data.getInt(base + "cytrix", 0)))
+                .replace("{pingcolor}", pingColor(getPing(p)))
                 .replace("{ping}", String.valueOf(getPing(p)))
                 .replace("{online}", String.valueOf(Bukkit.getOnlinePlayers().size()))
                 .replace("{max}", String.valueOf(Bukkit.getMaxPlayers()))
@@ -302,6 +310,11 @@ public class GriefBoard extends JavaPlugin implements Listener {
         sender.sendMessage("§e/" + label + " info <ник>");
         sender.sendMessage("§e/" + label + " list");
         return true;
+    }
+
+    /** Цвет пинга: зелёный до 80, жёлтый до 150, дальше красный. */
+    private static String pingColor(int ping) {
+        return ping < 80 ? "&a" : ping < 150 ? "&e" : "&c";
     }
 
     private static String fmt(int n) {
