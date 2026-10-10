@@ -48,6 +48,7 @@ public class GriefBoard extends JavaPlugin implements Listener {
     private ClanManager clans;
     private TpaManager tpa;
     private SpawnManager spawn;
+    private MessageManager messages;
     private final Map<UUID, PermissionAttachment> attachments = new HashMap<>();
     private final Set<UUID> busy = new HashSet<>();
     private final Map<UUID, Long> rtpCooldown = new HashMap<>();
@@ -78,6 +79,10 @@ public class GriefBoard extends JavaPlugin implements Listener {
             spawn = new SpawnManager(this);
             spawn.enable();
         }
+        if (getConfig().getBoolean("messages.enabled", true)) {
+            messages = new MessageManager(this);
+            messages.enable();
+        }
         for (Player p : Bukkit.getOnlinePlayers()) {
             applyRank(p);
             createBoard(p);
@@ -94,6 +99,7 @@ public class GriefBoard extends JavaPlugin implements Listener {
         if (clans != null) clans.disable();
         if (tpa != null) tpa.disable();
         if (spawn != null) spawn.disable();
+        if (messages != null) messages.disable();
         saveData();
         for (Player p : Bukkit.getOnlinePlayers()) {
             p.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
@@ -267,6 +273,15 @@ public class GriefBoard extends JavaPlugin implements Listener {
                 if (n.length() == 16 && n.charAt(0) == 'n' && !active.contains(n)) t.unregister();
             }
         }
+    }
+
+    /** Подставляет плейсхолдеры игрока и цвета (для сообщений других менеджеров). */
+    String format(String template, Player p) {
+        return color(replace(template, p));
+    }
+
+    String colorize(String text) {
+        return color(text);
     }
 
     /** Личный скорборд игрока (нужен кланам для подсветки тимы). */
