@@ -78,11 +78,13 @@ public class GriefBoard extends JavaPlugin implements Listener {
             createBoard(p);
         }
         startTask();
+        startNametagTask();
     }
 
     @Override
     public void onDisable() {
         if (taskId != -1) Bukkit.getScheduler().cancelTask(taskId);
+        if (nametagTaskId != -1) Bukkit.getScheduler().cancelTask(nametagTaskId);
         if (auth != null) auth.disable();
         if (clans != null) clans.disable();
         if (tpa != null) tpa.disable();
@@ -99,6 +101,13 @@ public class GriefBoard extends JavaPlugin implements Listener {
         boards.clear();
     }
 
+    private int nametagTaskId = -1;
+
+    private void startNametagTask() {
+        if (nametagTaskId != -1) Bukkit.getScheduler().cancelTask(nametagTaskId);
+        nametagTaskId = Bukkit.getScheduler().scheduleSyncRepeatingTask(this, this::refreshNametags, 20L, 20L);
+    }
+
     private void startTask() {
         if (taskId != -1) Bukkit.getScheduler().cancelTask(taskId);
         long interval = Math.max(1, getConfig().getLong("update-ticks", 20));
@@ -113,6 +122,7 @@ public class GriefBoard extends JavaPlugin implements Listener {
     public void onJoin(PlayerJoinEvent e) {
         applyRank(e.getPlayer());
         createBoard(e.getPlayer());
+        refreshNametags();
     }
 
     @EventHandler
@@ -164,13 +174,93 @@ public class GriefBoard extends JavaPlugin implements Listener {
         String header = String.join("\n", getConfig().getStringList("tab.header"));
         String footer = String.join("\n", getConfig().getStringList("tab.footer"));
         p.setPlayerListHeaderFooter(color(replace(header, p)), color(replace(footer, p)));
-        String fmt = getConfig().getString("tab.name-format", "");
-        if (!fmt.isEmpty()) p.setPlayerListName(color(replace(fmt, p)));
+        if (getConfig().getBoolean("nametag.enabled", true)) {
+            // ранг и клан в табе рисуют команды ников (см. refreshNametags), своё имя не нужно
+            if (!p.getPlayerListName().equals(p.getName())) p.setPlayerListName(null);
+        } else {
+            String fmt = getConfig().getString("tab.name-format", "");
+            if (!fmt.isEmpty()) p.setPlayerListName(color(replace(fmt, p)));
+        }
     }
 
     /** Тег клана для чата и таба, например "[Название] ". Пусто, если игрок не в клане. */
     private String clanTag(Player p) {
         return clans == null ? "" : clans.getClanTag(p.getUniqueId());
+    }
+
+    /** Бейдж клана для ника: " [Название]" в цвете клана, пусто если игрока нет в клане. */
+    private String clanSuffix(Player p) {
+        String badge = clans == null ? "" : clans.getClanBadge(p.getUniqueId());
+        return badge.isEmpty() ? "" : " " + badge;
+    }
+
+    private int rankOrder(Player p) {
+        ConfigurationSection ranks = getConfig().getConfigurationSection("ranks");
+        if (ranks == null) return 50;
+        String key = rankKey(p.getUniqueId());
+        int i = 0;
+        for (String k : ranks.getKeys(false)) {
+            if (k.equalsIgnoreCase(key)) return i;
+            i++;
+        }
+        return 50;
+    }
+
+    private static String fit(String s) {
+        if (s.length() > 64) {
+            s = s.substring(0, 64);
+            if (s.endsWith("\u00a7")) s = s.substring(0, 63);
+        }
+        return s;
+    }
+
+    /**
+     * Ранг и клан над ником: на личном скорборде каждого игрока для каждого игрока создаётся
+     * команда с префиксом (ранг) и суффиксом (клан). Имя команды начинается с номера ранга,
+     * поэтому список игроков (Tab) сортируется по рангам. Тимы красятся в цвет клана.
+     */
+    void refreshNametags() {
+        if (!getConfig().getBoolean("nametag.enabled", true)) return;
+        String prefixFmt = getConfig().getString("nametag.prefix", "{rank} ");
+        String suffixFmt = getConfig().getString("nametag.suffix", "{clansuffix}");
+        Collection<? extends Player> online = Bukkit.getOnlinePlayers();
+
+        Map<UUID, String[]> info = new HashMap<>();
+        for (Player t : online) {
+            String hex = t.getUniqueId().toString().replace("-", "").substring(0, 13);
+            String teamName = "n" + String.format("%02d", Math.min(99, rankOrder(t))) + hex;
+            info.put(t.getUniqueId(), new String[]{
+                    teamName,
+                    fit(color(replace(prefixFmt, t))),
+                    fit(color(replace(suffixFmt, t)))});
+        }
+
+        for (Player viewer : online) {
+            Scoreboard sb = boards.get(viewer.getUniqueId());
+            if (sb == null) continue;
+            Set<String> active = new HashSet<>();
+            for (Player target : online) {
+                String[] d = info.get(target.getUniqueId());
+                Team team = sb.getTeam(d[0]);
+                if (team == null) team = sb.registerNewTeam(d[0]);
+                active.add(d[0]);
+                if (!d[1].equals(team.getPrefix())) team.setPrefix(d[1]);
+                if (!d[2].equals(team.getSuffix())) team.setSuffix(d[2]);
+                org.bukkit.ChatColor mate = clans == null ? null : clans.highlightColor(viewer, target);
+                org.bukkit.ChatColor want = mate == null ? org.bukkit.ChatColor.WHITE : mate;
+                if (team.getColor() != want) team.setColor(want);
+                String name = target.getName();
+                if (!team.hasEntry(name)) {
+                    Team old = sb.getEntryTeam(name);
+                    if (old != null) old.removeEntry(name);
+                    team.addEntry(name);
+                }
+            }
+            for (Team t : new ArrayList<>(sb.getTeams())) {
+                String n = t.getName();
+                if (n.length() == 16 && n.charAt(0) == 'n' && !active.contains(n)) t.unregister();
+            }
+        }
     }
 
     /** Личный скорборд игрока (нужен кланам для подсветки тимы). */
@@ -188,6 +278,7 @@ public class GriefBoard extends JavaPlugin implements Listener {
                 .replace("{rank}", getRank(p))
                 .replace("{clan}", clan)
                 .replace("{clantag}", clanTag(p))
+                .replace("{clansuffix}", clanSuffix(p))
                 .replace("{clanlevel}", String.valueOf(clans == null ? 0 : clans.getClanLevel(p.getUniqueId())))
                 .replace("{kills}", String.valueOf(p.getStatistic(Statistic.PLAYER_KILLS)))
                 .replace("{deaths}", String.valueOf(p.getStatistic(Statistic.DEATHS)))
@@ -278,6 +369,7 @@ public class GriefBoard extends JavaPlugin implements Listener {
                 if (online != null) {
                     applyRank(online);
                     updateBoard(online);
+                    refreshNametags();
                 }
                 sender.sendMessage("§aРанг " + args[1] + " сброшен до ранга по умолчанию.");
             }
@@ -301,6 +393,7 @@ public class GriefBoard extends JavaPlugin implements Listener {
             if (online != null) {
                 applyRank(online);
                 updateBoard(online);
+                refreshNametags();
             }
             sender.sendMessage("§aРанг " + args[1] + " теперь: §f" + key);
             return true;

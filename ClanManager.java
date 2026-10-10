@@ -438,35 +438,32 @@ public class ClanManager implements Listener, CommandExecutor, TabCompleter {
         }
     }
 
-    /**
-     * Ники тимы окрашиваются в цвет клана (и видны сквозь стены) только для самого игрока:
-     * команда создаётся на его личном скорборде.
-     */
+    /** Старая команда подсветки больше не нужна: цвет тимы задаёт GriefBoard.refreshNametags(). */
     private void refreshHighlight(Player viewer) {
         Scoreboard sb = plugin.boardOf(viewer);
         if (sb == null) return;
-        Clan c = clanOf(viewer);
         Team t = sb.getTeam("clanmates");
-        if (c == null || !prefHighlight(viewer)) {
-            if (t != null) {
-                try { t.unregister(); } catch (IllegalStateException ignored) { }
-            }
-            return;
+        if (t != null) {
+            try { t.unregister(); } catch (IllegalStateException ignored) { }
         }
-        if (t == null) t = sb.registerNewTeam("clanmates");
-        t.setColor(c.color);
-        t.setCanSeeFriendlyInvisibles(true);
-        Set<String> want = new HashSet<>();
-        for (UUID id : c.members.keySet()) {
-            Player online = Bukkit.getPlayer(id);
-            if (online != null) want.add(online.getName());
-        }
-        for (String entry : new HashSet<>(t.getEntries())) {
-            if (!want.contains(entry)) t.removeEntry(entry);
-        }
-        for (String name : want) {
-            if (!t.hasEntry(name)) t.addEntry(name);
-        }
+    }
+
+    /**
+     * Цвет ника тиммейта для зрителя (и цвет его свечения): цвет клана или null,
+     * если это не тиммейт или подсветка у зрителя выключена.
+     */
+    ChatColor highlightColor(Player viewer, Player target) {
+        if (viewer.getUniqueId().equals(target.getUniqueId())) return null;
+        Clan c = clanOf(viewer);
+        if (c == null || !c.members.containsKey(target.getUniqueId())) return null;
+        if (!prefHighlight(viewer)) return null;
+        return c.color;
+    }
+
+    /** Бейдж клана для ника, например "&8[&6Название&8]". Пусто, если игрока нет в клане. */
+    String getClanBadge(UUID id) {
+        Clan c = clanOfId(id);
+        return c == null ? "" : "&8[&" + c.color.getChar() + c.name + "&8]";
     }
 
     private boolean prefHighlight(Player p) {
