@@ -49,6 +49,8 @@ public class GriefBoard extends JavaPlugin implements Listener {
     private TpaManager tpa;
     private SpawnManager spawn;
     private MessageManager messages;
+    private PrivateManager privates;
+    private HologramManager holograms;
     private final Map<UUID, PermissionAttachment> attachments = new HashMap<>();
     private final Set<UUID> busy = new HashSet<>();
     private final Map<UUID, Long> rtpCooldown = new HashMap<>();
@@ -83,6 +85,14 @@ public class GriefBoard extends JavaPlugin implements Listener {
             messages = new MessageManager(this);
             messages.enable();
         }
+        if (getConfig().getBoolean("privates.enabled", true)) {
+            privates = new PrivateManager(this);
+            privates.enable();
+        }
+        if (getConfig().getBoolean("holograms.enabled", true)) {
+            holograms = new HologramManager(this);
+            holograms.enable();
+        }
         for (Player p : Bukkit.getOnlinePlayers()) {
             applyRank(p);
             createBoard(p);
@@ -100,6 +110,8 @@ public class GriefBoard extends JavaPlugin implements Listener {
         if (tpa != null) tpa.disable();
         if (spawn != null) spawn.disable();
         if (messages != null) messages.disable();
+        if (holograms != null) holograms.disable();
+        if (privates != null) privates.disable();
         saveData();
         for (Player p : Bukkit.getOnlinePlayers()) {
             p.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
@@ -626,6 +638,8 @@ public class GriefBoard extends JavaPlugin implements Listener {
                 createBoard(p);
             }
             startTask();
+            if (privates != null) privates.reload();
+            if (holograms != null) holograms.reload();
             sender.sendMessage("§aGriefBoard перезагружен.");
             return true;
         }

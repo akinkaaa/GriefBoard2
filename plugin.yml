@@ -3,6 +3,7 @@ version: 1.0
 main: ru.griefboard.GriefBoard
 api-version: 1.16
 description: Sidebar scoreboard in GhostGrief style
+softdepend: [Multiverse-Core]
 
 commands:
   griefboard:
@@ -42,6 +43,9 @@ commands:
   spawn:
     description: Телепорт на спавн
     aliases: [lobby, hub]
+  privat:
+    description: Приваты
+    aliases: [p, pv, claim]
   rank:
     description: Выдача рангов
     permission: griefboard.admin
@@ -53,4 +57,6 @@ permissions:
   griefboard.rtp:
     default: true
   griefboard.admin:
+    default: op
+  griefboard.privat.bypass:
     default: op
