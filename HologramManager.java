@@ -40,6 +40,7 @@ public class HologramManager {
     private final GriefBoard plugin;
     private final Map<String, List<UUID>> stands = new HashMap<>();
     private final Set<String> forcedChunks = new HashSet<>();
+    private final Map<String, List<String>> lastLines = new HashMap<>();
     private BukkitTask task;
     private boolean cleaned = false;
 
@@ -100,7 +101,12 @@ public class HologramManager {
         }
         for (Def d : defs) {
             List<UUID> list = stands.get(d.id);
-            if (list != null && allValid(list)) continue;
+            boolean valid = list != null && allValid(list);
+            if (valid && d.lines.equals(lastLines.get(d.id))) continue;
+            if (valid && updateInPlace(d, list)) {
+                lastLines.put(d.id, d.lines);
+                continue;
+            }
             if (list != null) {
                 for (UUID id : list) {
                     Entity en = Bukkit.getEntity(id);
@@ -108,7 +114,24 @@ public class HologramManager {
                 }
             }
             stands.put(d.id, spawn(w, d));
+            lastLines.put(d.id, d.lines);
         }
+    }
+
+    /** Меняет тексты существующих строк без пересоздания (для обновляемых голограмм). */
+    private boolean updateInPlace(Def d, List<UUID> list) {
+        List<String> texts = new ArrayList<>();
+        for (String l : d.lines) {
+            String t = ChatColor.translateAlternateColorCodes('&', l);
+            if (!t.trim().isEmpty()) texts.add(t);
+        }
+        if (texts.size() != list.size()) return false;
+        for (int i = 0; i < texts.size(); i++) {
+            Entity en = Bukkit.getEntity(list.get(i));
+            if (en == null) return false;
+            en.setCustomName(texts.get(i));
+        }
+        return true;
     }
 
     private boolean allValid(List<UUID> list) {
@@ -155,11 +178,26 @@ public class HologramManager {
             }
         }
         stands.clear();
+        lastLines.clear();
     }
 
     // ---------- список голограмм ----------
 
+    /** Все голограммы: из конфига (или встроенные) и обновляемый топ убийств. */
     private List<Def> defs() {
+        List<Def> out = baseDefs();
+        if (plugin.getConfig().getBoolean("holograms.top.enabled", true)) {
+            out.add(new Def("top-kills",
+                    plugin.getConfig().getDouble("holograms.top.x", 2.4),
+                    plugin.getConfig().getDouble("holograms.top.y", 66.7),
+                    plugin.getConfig().getDouble("holograms.top.z", 89.6),
+                    plugin.getConfig().getDouble("holograms.top.offset-y", 0.9),
+                    plugin.topKillsLines()));
+        }
+        return out;
+    }
+
+    private List<Def> baseDefs() {
         List<Def> out = new ArrayList<>();
         ConfigurationSection cs = plugin.getConfig().getConfigurationSection("holograms.list");
         double globalOffset = plugin.getConfig().getDouble("holograms.offset-y", 0.9);
@@ -203,6 +241,24 @@ public class HologramManager {
                 "&e/privat add <ник> &7- добавить игрока",
                 "&e/privat info &7- информация, &e/privat show &7- границы",
                 "&7Снять приват: сломай блок привата")));
+        d.add(new Def("about", 0.507, 67.6, 18.2, 0.9, Arrays.asList(
+                "&6&l⚔ ГРИФ #1 ⚔",
+                "&7Сервер выживания и анархии",
+                "",
+                "&fЗдесь почти нет ограничений: строй базу,",
+                "&fдобывай ресурсы, создавай кланы",
+                "&fи борись за территорию.",
+                "",
+                "&e✦ &fПриваты защищают твою базу от грифа",
+                "&e✦ &fКланы: уровни, дом, чат и подсветка тимы",
+                "&e✦ &fВ мир выходишь через &e/rtp &fили яму",
+                "&e✦ &fТелепорты к друзьям: &e/tpa &7| &e/tpaccept",
+                "&e✦ &fВернуться на спавн: &e/spawn",
+                "",
+                "&c☠ &7Береги вещи: за пределами приватов",
+                "&7всё может случиться",
+                "",
+                "&6Удачи и приятной игры!")));
         return d;
     }
 }

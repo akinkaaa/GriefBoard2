@@ -50,6 +50,7 @@ public class GriefBoard extends JavaPlugin implements Listener {
     private SpawnManager spawn;
     private MessageManager messages;
     private PrivateManager privates;
+    private StatsManager stats;
     private HologramManager holograms;
     private final Map<UUID, PermissionAttachment> attachments = new HashMap<>();
     private final Set<UUID> busy = new HashSet<>();
@@ -85,6 +86,10 @@ public class GriefBoard extends JavaPlugin implements Listener {
             messages = new MessageManager(this);
             messages.enable();
         }
+        if (getConfig().getBoolean("stats.enabled", true)) {
+            stats = new StatsManager(this);
+            stats.enable();
+        }
         if (getConfig().getBoolean("privates.enabled", true)) {
             privates = new PrivateManager(this);
             privates.enable();
@@ -112,6 +117,7 @@ public class GriefBoard extends JavaPlugin implements Listener {
         if (messages != null) messages.disable();
         if (holograms != null) holograms.disable();
         if (privates != null) privates.disable();
+        if (stats != null) stats.disable();
         saveData();
         for (Player p : Bukkit.getOnlinePlayers()) {
             p.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
@@ -285,6 +291,11 @@ public class GriefBoard extends JavaPlugin implements Listener {
                 if (n.length() == 16 && n.charAt(0) == 'n' && !active.contains(n)) t.unregister();
             }
         }
+    }
+
+    /** Строки голограммы топа убийств (для HologramManager). */
+    List<String> topKillsLines() {
+        return stats == null ? new ArrayList<String>() : stats.hologramLines();
     }
 
     /** Подставляет плейсхолдеры игрока и цвета (для сообщений других менеджеров). */

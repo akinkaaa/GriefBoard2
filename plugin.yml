@@ -46,6 +46,8 @@ commands:
   privat:
     description: Приваты
     aliases: [p, pv, claim]
+  top:
+    description: Топ 10 по убийствам
   rank:
     description: Выдача рангов
     permission: griefboard.admin
