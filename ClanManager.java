@@ -194,6 +194,12 @@ public class ClanManager implements Listener, CommandExecutor, TabCompleter {
         return c == null ? "" : "&8[&" + c.color.getChar() + c.name + "&8] ";
     }
 
+    /** Состоят ли игроки в одном клане. */
+    boolean sameClan(UUID a, UUID b) {
+        String x = memberClan.get(a);
+        return x != null && x.equals(memberClan.get(b));
+    }
+
     /** Уровень клана игрока (0, если не в клане). */
     int getClanLevel(UUID id) {
         Clan c = clanOfId(id);

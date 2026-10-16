@@ -48,6 +48,9 @@ commands:
     aliases: [p, pv, claim]
   top:
     description: Топ 10 по убийствам
+  near:
+    description: Игроки поблизости
+    aliases: [nearby]
   rank:
     description: Выдача рангов
     permission: griefboard.admin

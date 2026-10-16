@@ -189,7 +189,7 @@ public class HologramManager {
         if (plugin.getConfig().getBoolean("holograms.top.enabled", true)) {
             out.add(new Def("top-kills",
                     plugin.getConfig().getDouble("holograms.top.x", 2.4),
-                    plugin.getConfig().getDouble("holograms.top.y", 66.7),
+                    plugin.getConfig().getDouble("holograms.top.y", 65.0),
                     plugin.getConfig().getDouble("holograms.top.z", 89.6),
                     plugin.getConfig().getDouble("holograms.top.offset-y", 0.9),
                     plugin.topKillsLines()));

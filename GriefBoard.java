@@ -51,6 +51,7 @@ public class GriefBoard extends JavaPlugin implements Listener {
     private MessageManager messages;
     private PrivateManager privates;
     private StatsManager stats;
+    private NearManager near;
     private HologramManager holograms;
     private final Map<UUID, PermissionAttachment> attachments = new HashMap<>();
     private final Set<UUID> busy = new HashSet<>();
@@ -85,6 +86,10 @@ public class GriefBoard extends JavaPlugin implements Listener {
         if (getConfig().getBoolean("messages.enabled", true)) {
             messages = new MessageManager(this);
             messages.enable();
+        }
+        if (getConfig().getBoolean("near.enabled", true)) {
+            near = new NearManager(this);
+            near.enable();
         }
         if (getConfig().getBoolean("stats.enabled", true)) {
             stats = new StatsManager(this);
@@ -291,6 +296,11 @@ public class GriefBoard extends JavaPlugin implements Listener {
                 if (n.length() == 16 && n.charAt(0) == 'n' && !active.contains(n)) t.unregister();
             }
         }
+    }
+
+    /** Игроки в одном клане? (для /near) */
+    boolean sameClan(Player a, Player b) {
+        return clans != null && clans.sameClan(a.getUniqueId(), b.getUniqueId());
     }
 
     /** Строки голограммы топа убийств (для HologramManager). */
