@@ -51,6 +51,9 @@ commands:
   near:
     description: Игроки поблизости
     aliases: [nearby]
+  ah:
+    description: Аукцион
+    aliases: [auction, auc]
   rank:
     description: Выдача рангов
     permission: griefboard.admin

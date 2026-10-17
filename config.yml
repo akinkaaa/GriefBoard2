@@ -448,3 +448,121 @@ near:
   radius: 150          # радиус поиска в блоках
   cooldown-seconds: 5  # пауза между использованиями
   max-list: 15         # сколько игроков показывать
+
+# ---------- АУКЦИОН (/ah) ----------
+# Цены в монетах (это поле "Монеты" в скорборде, /gsb set ник balance 1000)
+ah:
+  enabled: true
+  duration-hours: 48     # сколько живёт лот, потом предмет уходит в /ah expired
+  max-listings: 5        # максимум лотов у одного игрока
+  min-price: 1
+  max-price: 1000000000
+  tax-percent: 5         # налог с продажи (его получает "никто", монеты просто исчезают)
+
+# ---------- NPC-МАГАЗИН БРОНИ (ПКМ по продавцу на спавне) ----------
+shop:
+  enabled: true
+  # Где стоит NPC-продавец (мир берётся из rtp.lobby-world). yaw - куда он смотрит.
+  npc:
+    x: 39.557
+    y: 64.0
+    z: 66.7
+    yaw: 149
+  # Каталог. price - цена, currency: coins (монеты) или cytrix (донат-валюта).
+  # pieces - предметы набора (все выдаются за одну цену). enchants - чары на все предметы,
+  # piece-enchants - чары только на шлем (helmet), нагрудник (chestplate), поножи (leggings), ботинки (boots).
+  # Названия чар - как в игре на английском в нижнем регистре: protection, unbreaking, mending...
+  # Уровни можно ставить выше обычных (защита 5 и т.д.).
+  items:
+    guard:
+      name: "&b&lСтраж"
+      description: ["&7Полный алмазный сет для боя.", "&7Максимальная защита и подводные бонусы."]
+      price: 6000
+      currency: coins
+      pieces: [DIAMOND_HELMET, DIAMOND_CHESTPLATE, DIAMOND_LEGGINGS, DIAMOND_BOOTS]
+      enchants: {protection: 5, unbreaking: 3, mending: 1}
+      piece-enchants:
+        helmet: {respiration: 3, aqua_affinity: 1}
+        boots: {feather_falling: 4, depth_strider: 3}
+    raider:
+      name: "&3&lРейдер"
+      description: ["&7Надёжный алмазный сет для набегов.", "&7Защита IV и вечная прочность."]
+      price: 3500
+      currency: coins
+      pieces: [DIAMOND_HELMET, DIAMOND_CHESTPLATE, DIAMOND_LEGGINGS, DIAMOND_BOOTS]
+      enchants: {protection: 4, unbreaking: 3, mending: 1}
+    titan:
+      name: "&5&lТитан"
+      description: ["&7Незеритовый сет элитных бойцов.", "&7Защита V, шипы и скорость души."]
+      price: 120
+      currency: cytrix
+      pieces: [NETHERITE_HELMET, NETHERITE_CHESTPLATE, NETHERITE_LEGGINGS, NETHERITE_BOOTS]
+      enchants: {protection: 5, unbreaking: 3, mending: 1}
+      piece-enchants:
+        chestplate: {thorns: 3}
+        helmet: {respiration: 3, aqua_affinity: 1}
+        boots: {feather_falling: 4, soul_speed: 3}
+    blast:
+      name: "&c&lПодрывник"
+      description: ["&7Незерит против взрывов.", "&7Взрывоустойчивость V: TNT почти не страшен."]
+      price: 90
+      currency: cytrix
+      pieces: [NETHERITE_HELMET, NETHERITE_CHESTPLATE, NETHERITE_LEGGINGS, NETHERITE_BOOTS]
+      enchants: {blast_protection: 5, unbreaking: 3, mending: 1}
+    gold:
+      name: "&6&lЗолото богача"
+      description: ["&7Блестящий золотой сет.", "&7Для тех, кто любит выделяться."]
+      price: 2200
+      currency: coins
+      pieces: [GOLDEN_HELMET, GOLDEN_CHESTPLATE, GOLDEN_LEGGINGS, GOLDEN_BOOTS]
+      enchants: {protection: 4, unbreaking: 3, mending: 1}
+    chain:
+      name: "&7&lКольчуга странника"
+      description: ["&7Лёгкая кольчуга для дальних походов."]
+      price: 1400
+      currency: coins
+      pieces: [CHAINMAIL_HELMET, CHAINMAIL_CHESTPLATE, CHAINMAIL_LEGGINGS, CHAINMAIL_BOOTS]
+      enchants: {protection: 3, unbreaking: 3}
+    recruit:
+      name: "&f&lНовобранец"
+      description: ["&7Железный сет для начала пути.", "&7Недорого и надёжно."]
+      price: 900
+      currency: coins
+      pieces: [IRON_HELMET, IRON_CHESTPLATE, IRON_LEGGINGS, IRON_BOOTS]
+      enchants: {protection: 3, unbreaking: 2}
+    wanderer:
+      name: "&6&lПлащ скитальца"
+      description: ["&7Кожаный сет цвета дорожной пыли.", "&7Лёгкий и дешёвый."]
+      price: 350
+      currency: coins
+      color: [110, 70, 40]
+      pieces: [LEATHER_HELMET, LEATHER_CHESTPLATE, LEATHER_LEGGINGS, LEATHER_BOOTS]
+      enchants: {protection: 2, unbreaking: 2}
+    depths:
+      name: "&9&lШлем глубин"
+      description: ["&7Алмазный шлем водолаза.", "&7Дышать и видеть под водой."]
+      price: 900
+      currency: coins
+      pieces: [DIAMOND_HELMET]
+      enchants: {protection: 4, respiration: 3, aqua_affinity: 1, unbreaking: 3, mending: 1}
+    hermes:
+      name: "&b&lСапоги Гермеса"
+      description: ["&7Алмазные ботинки скороходов.", "&7Ни падение, ни вода не помеха."]
+      price: 1100
+      currency: coins
+      pieces: [DIAMOND_BOOTS]
+      enchants: {protection: 4, feather_falling: 4, depth_strider: 3, unbreaking: 3, mending: 1}
+    wings:
+      name: "&d&lКрылья ветра"
+      description: ["&7Элитры с усиленной прочностью.", "&7Лети туда, где тебя не ждут."]
+      price: 2500
+      currency: coins
+      pieces: [ELYTRA]
+      enchants: {unbreaking: 3, mending: 1}
+    bastion:
+      name: "&e&lБастион"
+      description: ["&7Щит, который почти невозможно сломать."]
+      price: 600
+      currency: coins
+      pieces: [SHIELD]
+      enchants: {unbreaking: 3, mending: 1}

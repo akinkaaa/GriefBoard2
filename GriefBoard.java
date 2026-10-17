@@ -52,6 +52,8 @@ public class GriefBoard extends JavaPlugin implements Listener {
     private PrivateManager privates;
     private StatsManager stats;
     private NearManager near;
+    private AuctionManager auction;
+    private ShopManager shop;
     private HologramManager holograms;
     private final Map<UUID, PermissionAttachment> attachments = new HashMap<>();
     private final Set<UUID> busy = new HashSet<>();
@@ -86,6 +88,14 @@ public class GriefBoard extends JavaPlugin implements Listener {
         if (getConfig().getBoolean("messages.enabled", true)) {
             messages = new MessageManager(this);
             messages.enable();
+        }
+        if (getConfig().getBoolean("shop.enabled", true)) {
+            shop = new ShopManager(this);
+            shop.enable();
+        }
+        if (getConfig().getBoolean("ah.enabled", true)) {
+            auction = new AuctionManager(this);
+            auction.enable();
         }
         if (getConfig().getBoolean("near.enabled", true)) {
             near = new NearManager(this);
@@ -123,6 +133,8 @@ public class GriefBoard extends JavaPlugin implements Listener {
         if (holograms != null) holograms.disable();
         if (privates != null) privates.disable();
         if (stats != null) stats.disable();
+        if (auction != null) auction.disable();
+        if (shop != null) shop.disable();
         saveData();
         for (Player p : Bukkit.getOnlinePlayers()) {
             p.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
@@ -296,6 +308,29 @@ public class GriefBoard extends JavaPlugin implements Listener {
                 if (n.length() == 16 && n.charAt(0) == 'n' && !active.contains(n)) t.unregister();
             }
         }
+    }
+
+    /** Баланс игрока в монетах (то же поле, что в скорборде). */
+    int getBalance(UUID id) {
+        return data.getInt("players." + id + ".balance", 0);
+    }
+
+    /** Меняет баланс игрока (в том числе офлайн-игрока) и сохраняет. */
+    void addBalance(UUID id, int delta) {
+        String path = "players." + id + ".balance";
+        data.set(path, Math.max(0, data.getInt(path, 0) + delta));
+        saveData();
+    }
+
+    /** Баланс Cytrix (донат-валюта, поле {cytrix} в скорборде). */
+    int getCytrix(UUID id) {
+        return data.getInt("players." + id + ".cytrix", 0);
+    }
+
+    void addCytrix(UUID id, int delta) {
+        String path = "players." + id + ".cytrix";
+        data.set(path, Math.max(0, data.getInt(path, 0) + delta));
+        saveData();
     }
 
     /** Игроки в одном клане? (для /near) */
@@ -661,6 +696,7 @@ public class GriefBoard extends JavaPlugin implements Listener {
             startTask();
             if (privates != null) privates.reload();
             if (holograms != null) holograms.reload();
+            if (shop != null) shop.reload();
             sender.sendMessage("§aGriefBoard перезагружен.");
             return true;
         }
